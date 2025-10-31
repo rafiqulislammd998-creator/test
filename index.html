@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ব্যক্তিগত ডিজিটাল ভল্ট</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* ফন্ট সেট করা */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Mode Background */
+            color: #c9d1d9;
+        }
+        /* স্ক্রলবার স্টাইল (ঐচ্ছিক) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #161b22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div id="app" class="max-w-6xl mx-auto">
+        <!-- হেডার -->
+        <header class="mb-8 p-4 bg-[#161b22] rounded-xl shadow-lg flex justify-between items-center flex-wrap">
+            <h1 class="text-3xl font-bold text-emerald-400">
+                <i data-lucide="lock" class="icon inline-block mr-2"></i> ব্যক্তিগত ভল্ট
+            </h1>
+            <div id="auth-status" class="text-sm text-gray-400 mt-2 sm:mt-0">
+                <!-- ব্যবহারকারী আইডি এখানে দেখাবে -->
+            </div>
+        </header>
+
+        <!-- ডেটা যুক্ত করার ফর্ম -->
+        <div class="mb-8 p-6 bg-[#161b22] rounded-xl shadow-xl border border-gray-700">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">নতুন কিছু যোগ করুন</h2>
+            
+            <div class="mb-4">
+                <label for="itemType" class="block text-sm font-medium text-gray-400 mb-2">আইটেমের প্রকারভেদ</label>
+                <select id="itemType" class="w-full p-3 rounded-lg bg-[#0d1117] border border-gray-600 focus:ring-emerald-500 focus:border-emerald-500 text-gray-100 transition duration-150 ease-in-out">
+                    <option value="note">নোট (Note)</option>
+                    <option value="photo">ছবির লিঙ্ক (Photo Link)</option>
+                    <option value="video">ভিডিওর লিঙ্ক (Video Link)</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="itemTitle" class="block text-sm font-medium text-gray-400 mb-2">শিরোনাম</label>
+                <input type="text" id="itemTitle" placeholder="একটি ছোট শিরোনাম দিন" class="w-full p-3 rounded-lg bg-[#0d1117] border border-gray-600 focus:ring-emerald-500 focus:border-emerald-500 text-gray-100 transition duration-150 ease-in-out">
+            </div>
+
+            <!-- কন্টেন্ট ফিল্ড, প্রকারভেদে পরিবর্তিত হবে -->
+            <div class="mb-6">
+                <label for="itemContent" class="block text-sm font-medium text-gray-400 mb-2" id="contentLabel">নোটের বিষয়বস্তু</label>
+                <textarea id="itemContent" rows="3" placeholder="এখানে আপনার নোট লিখুন..." class="w-full p-3 rounded-lg bg-[#0d1117] border border-gray-600 focus:ring-emerald-500 focus:border-emerald-500 text-gray-100 transition duration-150 ease-in-out"></textarea>
+                <p id="contentHelp" class="mt-2 text-xs text-gray-500 hidden">
+                    এখানে ছবি বা ভিডিওর পাবলিক লিঙ্ক (URL) পেস্ট করুন। গিটহাব পেজেস ফাইল স্টোরেজ সমর্থন করে না।
+                </p>
+            </div>
+
+            <button onclick="addItem()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01]">
+                <i data-lucide="plus-circle" class="icon inline-block mr-2"></i> সংরক্ষণ করুন
+            </button>
+        </div>
+
+        <!-- ফিল্টারিং এবং সার্চ -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <select id="filterType" onchange="displayItems()" class="sm:w-1/3 p-3 rounded-lg bg-[#161b22] border border-gray-600 text-gray-200 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 ease-in-out">
+                <option value="all">সব আইটেম</option>
+                <option value="note">নোট</option>
+                <option value="photo">ছবি</option>
+                <option value="video">ভিডিও</option>
+            </select>
+            <input type="text" id="searchTerm" onkeyup="displayItems()" placeholder="এখানে সার্চ করুন..." class="sm:flex-grow p-3 rounded-lg bg-[#161b22] border border-gray-600 text-gray-200 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 ease-in-out">
+        </div>
+
+        <!-- আইটেম প্রদর্শনের ক্ষেত্র -->
+        <div id="itemsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <p id="loadingMessage" class="text-center text-lg col-span-full">
+                <i data-lucide="loader" class="icon inline-block animate-spin mr-2"></i> ডেটা লোড হচ্ছে...
+            </p>
+            <!-- ডেটা এখানে লোড হবে -->
+        </div>
+        
+        <!-- কাস্টম নোটিফিকেশন মেসেজ বক্স -->
+        <div id="messageBox" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 opacity-0 pointer-events-none" style="z-index: 100;"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // প্রয়োজনীয় Firebase মডিউল আমদানি করা
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ফায়ারবেস লগ ডিবাগ করার জন্য
+        setLogLevel('Debug');
+        
+        // গ্লোবাল ভেরিয়েবল সেট করা
+        window.app = null;
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        window.vaultItems = []; // সমস্ত আইটেম রাখার অ্যারে
+        
+        // Firestore এবং Auth কনফিগারেশন
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'personal-vault-app';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * Firebase শুরু করা এবং ব্যবহারকারীকে প্রমাণীকরণ করা
+         */
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase Configuration পাওয়া যায়নি।");
+                }
+                
+                window.app = initializeApp(firebaseConfig);
+                window.db = getFirestore(window.app);
+                window.auth = getAuth(window.app);
+                
+                // প্রমাণীকরণ
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+
+                // প্রমাণীকরণ অবস্থা পর্যবেক্ষণ
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        document.getElementById('auth-status').innerHTML = `<i data-lucide="user-check" class="icon inline-block mr-1"></i> ব্যবহারকারী আইডি: ${window.userId}`;
+                        lucide.createIcons(); // আইকন আপডেট
+                        setupRealtimeListener();
+                    } else {
+                        // যদি কোনো সমস্যা হয়
+                        window.userId = crypto.randomUUID(); 
+                        document.getElementById('auth-status').innerHTML = `<i data-lucide="user-x" class="icon inline-block mr-1"></i> ব্যবহারকারী আইডি (অস্থায়ী): ${window.userId}`;
+                        lucide.createIcons(); // আইকন আপডেট
+                        const loadingMessageEl = document.getElementById('loadingMessage');
+                        if (loadingMessageEl) {
+                             loadingMessageEl.textContent = 'প্রমাণীকরণ সম্পন্ন হয়নি, অস্থায়ী আইডি ব্যবহার করা হচ্ছে।';
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase শুরু করতে বা প্রমাণীকরণ করতে সমস্যা হয়েছে:", error);
+                const loadingMessageEl = document.getElementById('loadingMessage');
+                if (loadingMessageEl) {
+                    loadingMessageEl.textContent = 'ভল্ট লোড করা যাচ্ছে না। ত্রুটি: ' + error.message;
+                }
+            }
+        }
+
+        /**
+         * রিয়েল-টাইম Firestore লিসেনার সেট আপ করা
+         */
+        function setupRealtimeListener() {
+            if (!window.db || !window.userId) return;
+
+            // ডেটাবেসের পথ: /artifacts/{appId}/users/{userId}/personal_vault
+            const vaultPath = `artifacts/${appId}/users/${window.userId}/personal_vault`;
+            const q = query(collection(window.db, vaultPath), orderBy("timestamp", "desc"));
+            
+            // রিয়েল-টাইম লিসেনার
+            onSnapshot(q, (snapshot) => {
+                const items = [];
+                snapshot.forEach((doc) => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                window.vaultItems = items;
+                displayItems();
+                
+                const loadingMessageEl = document.getElementById('loadingMessage');
+                if (loadingMessageEl) {
+                    loadingMessageEl.classList.add('hidden');
+                }
+                
+                lucide.createIcons(); // আইকন রেন্ডার করা
+            }, (error) => {
+                console.error("Firestore ডেটা শুনতে সমস্যা হয়েছে:", error);
+                showMessage("ডেটা লোড করতে সমস্যা হয়েছে। অনুগ্রহ করে কনসোল চেক করুন।", "bg-red-600");
+                const loadingMessageEl = document.getElementById('loadingMessage');
+                if (loadingMessageEl) {
+                    loadingMessageEl.textContent = 'ডেটা লোড করা যাচ্ছে না।';
+                }
+            });
+        }
+        
+        // গ্লোবাল ফাংশনগুলি উইন্ডো অবজেক্টে যোগ করা
+        window.addItem = addItem;
+        window.deleteItem = deleteItem;
+        window.displayItems = displayItems;
+        window.showMessage = showMessage;
+        window.updateContentFields = updateContentFields;
+        
+        // ইনিশিয়ালাইজেশন
+        window.onload = () => {
+            initializeFirebase();
+            // কন্টেন্ট ফিল্ডের পরিবর্তন হ্যান্ডেল করা
+            document.getElementById('itemType').addEventListener('change', updateContentFields);
+            updateContentFields(); // শুরুর জন্য একবার কল করা
+        };
+        
+        // --- ইউটিলিটি ফাংশনস ---
+
+        /**
+         * নোটিফিকেশন মেসেজ দেখানো
+         * @param {string} message - দেখানোর জন্য বার্তা
+         * @param {string} colorClass - ব্যাকগ্রাউন্ড কালার ক্লাস (যেমন: 'bg-emerald-600')
+         */
+        function showMessage(message, colorClass) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-xl text-white transition-opacity duration-300 pointer-events-none ${colorClass}`;
+            box.classList.remove('opacity-0');
+            box.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                box.classList.remove('opacity-100');
+                box.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        /**
+         * আইটেমের প্রকারভেদে ইনপুট লেবেল ও প্লেসহোল্ডার পরিবর্তন করা
+         */
+        function updateContentFields() {
+            const type = document.getElementById('itemType').value;
+            const contentLabel = document.getElementById('contentLabel');
+            const itemContent = document.getElementById('itemContent');
+            const contentHelp = document.getElementById('contentHelp');
+
+            contentHelp.classList.add('hidden');
+            itemContent.placeholder = '';
+            
+            if (type === 'note') {
+                contentLabel.textContent = 'নোটের বিষয়বস্তু';
+                itemContent.placeholder = 'এখানে আপনার নোট লিখুন...';
+                itemContent.rows = 3;
+                // itemContent.type = 'textarea'; 
+            } else if (type === 'photo') {
+                contentLabel.textContent = 'ছবির পাবলিক লিঙ্ক (URL)';
+                itemContent.placeholder = 'https://example.com/your-photo.jpg';
+                contentHelp.classList.remove('hidden');
+                itemContent.rows = 1;
+                // itemContent.type = 'url';
+            } else if (type === 'video') {
+                contentLabel.textContent = 'ভিডিওর পাবলিক লিঙ্ক (URL)';
+                itemContent.placeholder = 'https://example.com/your-video.mp4';
+                contentHelp.classList.remove('hidden');
+                itemContent.rows = 1;
+                // itemContent.type = 'url';
+            }
+        }
+
+        // --- ডেটাবেস অপারেশনস ---
+
+        /**
+         * ফায়ারস্টোরে একটি নতুন আইটেম যুক্ত করা
+         */
+        async function addItem() {
+            const itemType = document.getElementById('itemType').value;
+            const itemTitle = document.getElementById('itemTitle').value.trim();
+            const itemContent = document.getElementById('itemContent').value.trim();
+            
+            if (!itemTitle || !itemContent) {
+                showMessage("শিরোনাম এবং বিষয়বস্তু উভয়ই পূরণ করুন।", "bg-yellow-600");
+                return;
+            }
+
+            if (!window.db || !window.userId) {
+                showMessage("ডেটাবেস প্রস্তুত নয়। কিছুক্ষণ অপেক্ষা করুন বা পুনরায় চেষ্টা করুন।", "bg-red-600");
+                return;
+            }
+
+            try {
+                const vaultPath = `artifacts/${appId}/users/${window.userId}/personal_vault`;
+                const newItem = {
+                    type: itemType,
+                    title: itemTitle,
+                    content: itemContent,
+                    timestamp: Date.now()
+                };
+
+                await addDoc(collection(window.db, vaultPath), newItem);
+                
+                // ফর্ম রিসেট করা
+                document.getElementById('itemTitle').value = '';
+                document.getElementById('itemContent').value = '';
+                document.getElementById('itemType').value = 'note';
+                updateContentFields();
+
+                showMessage("আইটেম সফলভাবে সংরক্ষিত হয়েছে!", "bg-emerald-600");
+
+            } catch (error) {
+                console.error("আইটেম যোগ করতে সমস্যা:", error);
+                showMessage("সংরক্ষণে ব্যর্থ: " + error.message, "bg-red-600");
+            }
+        }
+
+        /**
+         * একটি আইটেম মুছে ফেলা
+         * @param {string} id - ডিলিট করার জন্য ডকুমেন্ট আইডি
+         */
+        async function deleteItem(id) {
+            if (!window.db || !window.userId) {
+                showMessage("ডেটাবেস প্রস্তুত নয়।", "bg-red-600");
+                return;
+            }
+            
+            // কাস্টম কনফার্মেশন বক্সের বদলে সরাসরি ডিলিট করা
+            // বাস্তব অ্যাপে নিশ্চিতকরণ প্রয়োজন হতে পারে।
+            
+            try {
+                const vaultPath = `artifacts/${appId}/users/${window.userId}/personal_vault`;
+                await deleteDoc(doc(window.db, vaultPath, id));
+                showMessage("আইটেম সফলভাবে মুছে ফেলা হয়েছে!", "bg-emerald-600");
+            } catch (error) {
+                console.error("আইটেম মুছতে সমস্যা:", error);
+                showMessage("মুছে ফেলতে ব্যর্থ: " + error.message, "bg-red-600");
+            }
+        }
+        
+        // --- UI ডিসপ্লে ফাংশনস ---
+
+        /**
+         * সমস্ত আইটেম ফিল্টার করে এবং ডিসপ্লে করা
+         */
+        function displayItems() {
+            const container = document.getElementById('itemsContainer');
+            const filterType = document.getElementById('filterType').value;
+            const searchTerm = document.getElementById('searchTerm').value.toLowerCase().trim();
+            
+            // প্রাথমিক লোডিং মেসেজ সরিয়ে ফেলা
+            const loadingMessageEl = document.getElementById('loadingMessage');
+            if (loadingMessageEl) {
+                loadingMessageEl.classList.add('hidden');
+            }
+            
+            let filteredItems = window.vaultItems;
+
+            // ১. প্রকারভেদ দ্বারা ফিল্টার করা
+            if (filterType !== 'all') {
+                filteredItems = filteredItems.filter(item => item.type === filterType);
+            }
+
+            // ২. সার্চ টার্ম দ্বারা ফিল্টার করা
+            if (searchTerm) {
+                filteredItems = filteredItems.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) || 
+                    item.content.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            container.innerHTML = ''; // কন্টেনার খালি করা
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 text-lg col-span-full py-8">
+                    <i data-lucide="inbox" class="icon inline-block mr-2"></i> কোনো আইটেম খুঁজে পাওয়া যায়নি।
+                </p>`;
+            } else {
+                filteredItems.forEach(item => {
+                    container.appendChild(createItemCard(item));
+                });
+            }
+            lucide.createIcons(); // নতুন কার্ডের জন্য আইকন রেন্ডার করা
+        }
+
+        /**
+         * একটি আইটেমের জন্য কার্ড তৈরি করা
+         * @param {object} item - ভল্ট আইটেম অবজেক্ট
+         * @returns {HTMLElement} - কার্ড এলিমেন্ট
+         */
+        function createItemCard(item) {
+            const card = document.createElement('div');
+            card.className = "bg-[#161b22] p-5 rounded-xl shadow-lg border border-gray-700 flex flex-col justify-between transition transform hover:shadow-2xl hover:scale-[1.01]";
+            
+            let iconHtml, contentHtml, downloadAction;
+            let date = new Date(item.timestamp).toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            // প্রকারভেদে কার্ডের কন্টেন্ট সেট করা
+            if (item.type === 'note') {
+                iconHtml = `<i data-lucide="notebook" class="icon text-yellow-400 mr-2"></i>`;
+                contentHtml = `<p class="text-sm text-gray-400 mb-4 whitespace-pre-wrap">${item.content}</p>`;
+                downloadAction = `<button onclick="downloadNote('${item.id}', '${item.title}', '${item.content}')" class="flex-shrink-0 ml-2 p-2 bg-blue-600 hover:bg-blue-700 rounded-full transition duration-150">
+                                    <i data-lucide="download" class="icon w-4 h-4 text-white"></i>
+                                  </button>`;
+            } else if (item.type === 'photo') {
+                iconHtml = `<i data-lucide="image" class="icon text-pink-400 mr-2"></i>`;
+                contentHtml = `<a href="${item.content}" target="_blank" class="block mb-4 overflow-hidden rounded-lg border-2 border-transparent hover:border-pink-500 transition duration-150">
+                                <img src="${item.content}" onerror="this.onerror=null;this.src='https://placehold.co/400x200/2a3642/c9d1d9?text=ছবি+পাওয়া+যায়নি';" alt="${item.title}" class="w-full h-40 object-cover">
+                               </a>
+                               <p class="text-xs text-gray-500 truncate">${item.content}</p>`;
+                downloadAction = `<a href="${item.content}" download="${item.title}" class="flex-shrink-0 ml-2 p-2 bg-blue-600 hover:bg-blue-700 rounded-full transition duration-150">
+                                    <i data-lucide="download" class="icon w-4 h-4 text-white"></i>
+                                  </a>`;
+            } else if (item.type === 'video') {
+                iconHtml = `<i data-lucide="video" class="icon text-purple-400 mr-2"></i>`;
+                contentHtml = `<p class="text-sm text-gray-400 mb-4 break-words">ভিডিও লিঙ্ক:</p>
+                               <a href="${item.content}" target="_blank" class="text-sm text-purple-400 hover:underline truncate block mb-4">${item.content}</a>`;
+                downloadAction = `<a href="${item.content}" download="${item.title}" class="flex-shrink-0 ml-2 p-2 bg-blue-600 hover:bg-blue-700 rounded-full transition duration-150">
+                                    <i data-lucide="download" class="icon w-4 h-4 text-white"></i>
+                                  </a>`;
+            }
+
+            card.innerHTML = `
+                <div>
+                    <div class="flex items-start justify-between mb-3">
+                        <h3 class="text-xl font-medium text-gray-200">${iconHtml}${item.title}</h3>
+                        <button onclick="deleteItem('${item.id}')" class="flex-shrink-0 text-red-400 hover:text-red-500 transition duration-150 p-1">
+                            <i data-lucide="trash-2" class="icon w-5 h-5"></i>
+                        </button>
+                    </div>
+                    ${contentHtml}
+                </div>
+                <div class="flex items-center justify-between mt-4 border-t border-gray-700 pt-3">
+                    <span class="text-xs text-gray-500">সংরক্ষণ তারিখ: ${date}</span>
+                    <div class="flex items-center">
+                        ${downloadAction}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        /**
+         * নোট ডাউনলোড করার ফাংশন (টেক্সট ফাইল হিসাবে)
+         * এই ফাংশনটি গ্লোবাল করে window এ যোগ করা হয়েছে।
+         */
+        window.downloadNote = function(id, title, content) {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            element.setAttribute('download', title + '.txt');
+            
+            // নিশ্চিত করার জন্য এটি DOM-এ যুক্ত করা
+            document.body.appendChild(element); 
+            element.click();
+            document.body.removeChild(element);
+            showMessage("নোট ডাউনলোড শুরু হয়েছে!", "bg-emerald-600");
+        }
+
+    </script>
+</body>
+</html>
